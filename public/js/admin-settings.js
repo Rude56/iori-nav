@@ -1503,7 +1503,15 @@ const initSettings = () => {
         showMessage('搜索 URL 必须包含 {q} 占位符', 'error');
         return;
       }
-      customSearchEngines.push({ name, url });
+      // 从 currentSettings 中解析，不依赖闭包变量，避免可能的引用问题
+      let engines = [];
+      try {
+        engines = JSON.parse(currentSettings.home_custom_search_engines || '[]');
+        if (!Array.isArray(engines)) engines = [];
+      } catch { engines = []; }
+      engines.push({ name, url });
+      currentSettings.home_custom_search_engines = JSON.stringify(engines);
+      customSearchEngines = engines; // 同步闭包变量
       seNameInput.value = '';
       seUrlInput.value = '';
       renderCustomSearchEngineList();
