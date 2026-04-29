@@ -1493,29 +1493,38 @@ const initSettings = () => {
 
   if (addSeBtn) {
     addSeBtn.addEventListener('click', () => {
-      const name = seNameInput.value.trim();
-      const url = seUrlInput.value.trim();
-      if (!name || !url) {
-        showMessage('请填写搜索引擎名称和搜索 URL', 'error');
-        return;
-      }
-      if (!url.includes('{q}')) {
-        showMessage('搜索 URL 必须包含 {q} 占位符', 'error');
-        return;
-      }
-      // 从 currentSettings 中解析，不依赖闭包变量，避免可能的引用问题
-      let engines = [];
       try {
-        engines = JSON.parse(currentSettings.home_custom_search_engines || '[]');
-        if (!Array.isArray(engines)) engines = [];
-      } catch { engines = []; }
-      engines.push({ name, url });
-      currentSettings.home_custom_search_engines = JSON.stringify(engines);
-      customSearchEngines = engines; // 同步闭包变量
-      seNameInput.value = '';
-      seUrlInput.value = '';
-      renderCustomSearchEngineList();
-      showMessage('已添加自定义搜索引擎，保存设置后生效', 'info');
+        const name = seNameInput.value.trim();
+        const url = seUrlInput.value.trim();
+        if (!name || !url) {
+          showMessage('请填写搜索引擎名称和搜索 URL', 'error');
+          return;
+        }
+        if (!url.includes('{q}')) {
+          showMessage('搜索 URL 必须包含 {q} 占位符', 'error');
+          return;
+        }
+        if (!currentSettings || typeof currentSettings.home_custom_search_engines === 'undefined') {
+          showMessage('系统异常：无法读取设置', 'error');
+          return;
+        }
+        let engines = [];
+        try {
+          const raw = currentSettings.home_custom_search_engines;
+          engines = JSON.parse(typeof raw === 'string' ? raw : '[]');
+          if (!Array.isArray(engines)) engines = [];
+        } catch { engines = []; }
+        engines.push({ name, url });
+        currentSettings.home_custom_search_engines = JSON.stringify(engines);
+        customSearchEngines = engines;
+        seNameInput.value = '';
+        seUrlInput.value = '';
+        renderCustomSearchEngineList();
+        showMessage('已添加自定义搜索引擎，保存设置后生效', 'info');
+      } catch (e) {
+        console.error('搜索引擎添加失败:', e);
+        showMessage('添加失败: ' + e.message, 'error');
+      }
     });
   }
 
