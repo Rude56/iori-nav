@@ -375,6 +375,7 @@
             <button class="settings-tab-btn" data-tab="layout-settings">卡片设置</button>
             <button class="settings-tab-btn" data-tab="wallpaper-settings">壁纸设置</button>
             <button class="settings-tab-btn" data-tab="ai-settings">AI 设置</button>
+            <button class="settings-tab-btn" data-tab="search-engines">搜索引擎</button>
           </div>
 
           <!-- 首页设置内容 -->
@@ -915,6 +916,33 @@
                 <button id="stopBulkGenerateBtn" class="button-danger">
                   <span>⏸️</span> 停止处理
                 </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 搜索引擎设置内容 -->
+          <div id="search-engines" class="settings-tab-content">
+            <div class="mb-4">
+              <p class="text-sm text-gray-500 mb-3">添加自定义搜索引擎，在前台搜索框切换使用。<code>{q}</code> 会被替换为搜索关键词。</p>
+              <div id="customSearchEngineList" class="space-y-2">
+                <div class="text-center text-gray-400 py-4 text-sm">暂无自定义搜索引擎</div>
+              </div>
+              <div class="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h5 class="text-sm font-medium text-gray-700 mb-3">添加搜索引擎</h5>
+                <div class="space-y-3">
+                  <div>
+                    <label class="form-label" for="seName">名称</label>
+                    <input type="text" id="seName" placeholder="例如: Wikipedia" class="form-input">
+                  </div>
+                  <div>
+                    <label class="form-label" for="seUrl">搜索 URL</label>
+                    <input type="text" id="seUrl" placeholder="例如: https://en.wikipedia.org/wiki/Special:Search?search={q}" class="form-input">
+                    <p class="form-hint">使用 <code>{q}</code> 作为搜索关键词占位符</p>
+                  </div>
+                  <button id="addSearchEngineBtn" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm font-medium">
+                    ＋ 添加
+                  </button>
+                </div>
               </div>
             </div>
           </div>

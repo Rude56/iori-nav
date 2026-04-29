@@ -249,12 +249,23 @@ export async function onRequest(context) {
   const statsRowHiddenClass = shouldRenderStatsRow ? '' : 'hidden';
 
   // === 13. 搜索引擎选项 ===
+  let customSearchEngineOptions = '';
+  let customSearchEnginesArray = [];
+  try { customSearchEnginesArray = JSON.parse(S.home_custom_search_engines); } catch {}
+  if (Array.isArray(customSearchEnginesArray) && customSearchEnginesArray.length > 0) {
+    customSearchEngineOptions = customSearchEnginesArray.map((eng, i) => {
+      const safeName = escapeHTML(eng.name || 'Custom');
+      return `<label class="search-engine-option" data-engine="custom_${i}" data-url="${escapeHTML(eng.url || '')}"><span>${safeName}</span></label>`;
+    }).join('');
+  }
+
   const searchEngineOptions = S.home_search_engine_enabled ? `
     <div class="flex justify-center items-center gap-3 mb-4 text-sm select-none search-engine-wrapper">
         <label class="search-engine-option active" data-engine="local"><span>站内</span></label>
         <label class="search-engine-option" data-engine="google"><span>Google</span></label>
         <label class="search-engine-option" data-engine="baidu"><span>Baidu</span></label>
         <label class="search-engine-option" data-engine="github"><span>GitHub</span></label>
+        ${customSearchEngineOptions}
     </div>` : '';
 
   // === 14. Header HTML ===
@@ -459,6 +470,7 @@ export async function onRequest(context) {
     rememberLastCategory: S.home_remember_last_category,
     // 当前 SSR 已渲染的分类（用于前端 Auto-restore 判断是否可跳过重绘）
     ssrCatalogId: catalogExists ? categoryIdMap.get(requestedCatalogName) : 'all',
+    customSearchEngines: (() => { try { return JSON.parse(S.home_custom_search_engines); } catch { return []; } })(),
   }).replace(/</g, '\\u003c');
 
   // --- 一次性替换 </head> ---

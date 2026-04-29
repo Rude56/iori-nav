@@ -272,6 +272,10 @@ document.addEventListener('DOMContentLoaded', function () {
     localStorage.removeItem('search_engine');
   }
 
+  function getActiveEngineOption(engine) {
+    return Array.from(engineOptions).find(opt => opt.dataset.engine === engine);
+  }
+
   function updateSearchEngineUI(engine) {
     // Update Active Class
     engineOptions.forEach(opt => {
@@ -282,12 +286,18 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
 
-    // Update Placeholder
+    // Update Placeholder — check hardcoded engines first, then custom
     let placeholder = '搜索书签...';
-    switch (engine) {
-      case 'google': placeholder = 'Google 搜索...'; break;
-      case 'baidu': placeholder = '百度搜索...'; break;
-      case 'github': placeholder = 'GitHub 搜索...'; break;
+    if (engine.startsWith('custom_')) {
+      const activeOpt = getActiveEngineOption(engine);
+      const activeName = activeOpt ? activeOpt.textContent.trim() : '搜索';
+      placeholder = `${activeName} 搜索...`;
+    } else {
+      switch (engine) {
+        case 'google': placeholder = 'Google 搜索...'; break;
+        case 'baidu': placeholder = '百度搜索...'; break;
+        case 'github': placeholder = 'GitHub 搜索...'; break;
+      }
     }
 
     searchInputs.forEach(input => {
@@ -351,10 +361,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const query = this.value.trim();
         if (query) {
           let url = '';
-          switch (currentSearchEngine) {
-            case 'google': url = `https://www.google.com/search?q=${encodeURIComponent(query)}`; break;
-            case 'baidu': url = `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`; break;
-            case 'github': url = `https://github.com/search?q=${encodeURIComponent(query)}`; break;
+          if (currentSearchEngine.startsWith('custom_')) {
+            const activeOpt = getActiveEngineOption(currentSearchEngine);
+            const templateUrl = activeOpt ? activeOpt.dataset.url : '';
+            if (templateUrl) {
+              url = templateUrl.replace('{q}', encodeURIComponent(query));
+            }
+          } else {
+            switch (currentSearchEngine) {
+              case 'google': url = `https://www.google.com/search?q=${encodeURIComponent(query)}`; break;
+              case 'baidu': url = `https://www.baidu.com/s?wd=${encodeURIComponent(query)}`; break;
+              case 'github': url = `https://github.com/search?q=${encodeURIComponent(query)}`; break;
+            }
           }
           if (url) window.open(url, '_blank');
         }

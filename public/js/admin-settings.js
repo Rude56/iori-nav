@@ -351,7 +351,8 @@ const initSettings = () => {
     wallpaper_source: 'bing',
     wallpaper_cid_360: '36',
     layout_card_style: 'style1',
-    layout_card_border_radius: '12'
+    layout_card_border_radius: '12',
+    home_custom_search_engines: '[]'
   };
 
   let shouldStopBulkGeneration = false;
@@ -787,6 +788,7 @@ const initSettings = () => {
     }
 
     currentSettings.home_search_engine_enabled = searchEngineSwitch.checked;
+    currentSettings.home_custom_search_engines = JSON.stringify(customSearchEngines);
 
     currentSettings.layout_custom_wallpaper = customWallpaperInput.value.trim();
 
@@ -982,7 +984,8 @@ const initSettings = () => {
         if (serverSettings.card_desc_font) currentSettings.card_desc_font = serverSettings.card_desc_font;
         if (serverSettings.card_desc_size) currentSettings.card_desc_size = serverSettings.card_desc_size;
         if (serverSettings.card_desc_color) currentSettings.card_desc_color = serverSettings.card_desc_color;
-
+        if (serverSettings.home_custom_search_engines) currentSettings.home_custom_search_engines = serverSettings.home_custom_search_engines;
+        if (serverSettings.home_custom_search_engines === '') currentSettings.home_custom_search_engines = '[]';
       }
     } catch (e) {
       console.error('Failed to load settings', e);
@@ -1207,6 +1210,14 @@ const initSettings = () => {
     selectCardStyle(currentSettings.layout_card_style || 'style1');
     updatePreviewCards();
     updatePreviewWidth();
+
+    // Reload custom search engines
+    try {
+      const stored = currentSettings.home_custom_search_engines || '[]';
+      customSearchEngines = JSON.parse(stored);
+      if (!Array.isArray(customSearchEngines)) customSearchEngines = [];
+    } catch { customSearchEngines = []; }
+    renderCustomSearchEngineList();
   }
 
   // --- AI Call Logic (Frontend) ---
@@ -1432,6 +1443,82 @@ const initSettings = () => {
     editBookmarkAiBtn.addEventListener('click', () => {
       handleSingleGenerate('editBookmarkName', 'editBookmarkUrl', 'editBookmarkDesc', 'editBookmarkAiBtn', 'editBookmarkModal');
     });
+  }
+
+  // ========== 自定义搜索引擎管理 ==========
+  let customSearchEngines = [];
+  try {
+    const stored = currentSettings.home_custom_search_engines || '[]';
+    customSearchEngines = JSON.parse(stored);
+    if (!Array.isArray(customSearchEngines)) customSearchEngines = [];
+  } catch { customSearchEngines = []; }
+
+  const searchEngineListEl = document.getElementById('customSearchEngineList');
+  const seNameInput = document.getElementById('seName');
+  const seUrlInput = document.getElementById('seUrl');
+  const addSeBtn = document.getElementById('addSearchEngineBtn');
+
+  function renderCustomSearchEngineList() {
+    if (!searchEngineListEl) return;
+    if (customSearchEngines.length === 0) {
+      searchEngineListEl.innerHTML = '<div class="text-center text-gray-400 py-4 text-sm">暂无自定义搜索引擎</div>';
+      return;
+    }
+    searchEngineListEl.innerHTML = customSearchEngines.map((eng, i) => {
+      const safeName = escapeHtml(eng.name || '未命名');
+      const safeUrl = escapeHtml(eng.url || '');
+      return `
+        <div class="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200 shadow-sm" data-idx="${i}">
+          <div class="flex-1 min-w-0 mr-3">
+            <div class="font-medium text-gray-800 text-sm">${safeName}</div>
+            <div class="text-xs text-gray-400 truncate mt-0.5">${safeUrl}</div>
+          </div>
+          <button class="delete-se-btn flex-shrink-0 p-1.5 text-red-500 hover:bg-red-50 rounded transition-colors" data-idx="${i}" title="删除">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        </div>`;
+    }).join('');
+
+    // Delete handlers
+    searchEngineListEl.querySelectorAll('.delete-se-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx, 10);
+        if (!isNaN(idx) && idx >= 0 && idx < customSearchEngines.length) {
+          customSearchEngines.splice(idx, 1);
+          renderCustomSearchEngineList();
+        }
+      });
+    });
+  }
+
+  if (addSeBtn) {
+    addSeBtn.addEventListener('click', () => {
+      const name = seNameInput.value.trim();
+      const url = seUrlInput.value.trim();
+      if (!name || !url) {
+        showMessage('请填写搜索引擎名称和搜索 URL', 'error');
+        return;
+      }
+      if (!url.includes('{q}')) {
+        showMessage('搜索 URL 必须包含 {q} 占位符', 'error');
+        return;
+      }
+      customSearchEngines.push({ name, url });
+      seNameInput.value = '';
+      seUrlInput.value = '';
+      renderCustomSearchEngineList();
+      showMessage('已添加自定义搜索引擎，保存设置后生效', 'info');
+    });
+  }
+
+  // Init render on settings load
+  renderCustomSearchEngineList();
+
+  // Simple escape for HTML
+  function escapeHtml(str) {
+    if (!str) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return String(str).replace(/[&<>"']/g, c => map[c]);
   }
 };
 initSettings();
